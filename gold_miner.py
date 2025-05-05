@@ -97,14 +97,18 @@ class Ore:
         half_range = 200  # 可以根据需要调整这个值
         self.x = random.randint(middle_width - half_range, middle_width + half_range - self.size)
         self.y = random.randint(200, HEIGHT - 50)
-        # 加载图片
-        self.image = pygame.image.load('shui.png')
-        # 缩放图片到合适大小
-        self.image = pygame.transform.scale(self.image, (self.size, self.size))
+        try:
+            # 加载图片
+            self.image = pygame.image.load('shui.png')
+            # 缩放图片到合适大小
+            self.image = pygame.transform.scale(self.image, (self.size, self.size))
+        except pygame.error as e:
+            print(f"加载 shui.png 失败: {e}")
 
     def draw(self):
         # 绘制图片
-        screen.blit(self.image, (self.x, self.y))
+        if hasattr(self, 'image'):
+            screen.blit(self.image, (self.x, self.y))
 
 # 创建钩子对象
 hook = Hook()
@@ -129,6 +133,14 @@ running = True
 wave_offsets = [0] * WAVE_LAYERS
 game_paused = False
 
+# 加载水的 PNG 图片
+try:
+    water_image = pygame.image.load('water.png')
+    # 缩放图片以适应背景
+    water_image = pygame.transform.scale(water_image, (WIDTH, HEIGHT - separator_y))
+except pygame.error as e:
+    print(f"加载 water.png 失败: {e}")
+
 while running:
     clock.tick(FPS)
     for event in pygame.event.get():
@@ -148,28 +160,30 @@ while running:
         separator_y = 100  # 可以根据需要调整分隔线的位置
         pygame.draw.line(screen, BLACK, (0, separator_y), (WIDTH, separator_y), 5)
 
-        # 绘制河流背景
-        pygame.draw.rect(screen, RIVER_COLOR, (0, separator_y, WIDTH, HEIGHT - separator_y))
+        # 绘制水的背景图片
+        screen.blit(water_image, (0, separator_y))
 
-        # 绘制多层波纹
-        for layer in range(WAVE_LAYERS):
-            wave_offset = wave_offsets[layer]
-            wave_height = WAVE_HEIGHTS[layer]
-            wave_speed = WAVE_SPEEDS[layer]
-            for i in range(WAVE_COUNT):
-                wave_x = i * WAVE_WIDTH + wave_offset
-                wave_y = separator_y + (wave_height * math.sin((wave_x + wave_offset) * 0.03))
-                wave_rect = pygame.Rect(wave_x, wave_y, WAVE_WIDTH, wave_height)
-                alpha = int((math.sin((wave_x + wave_offset) * 0.03 + layer * 0.5) + 1) * 64)
-                wave_surface = pygame.Surface((WAVE_WIDTH, wave_height))
-                wave_surface.set_alpha(alpha)
-                wave_surface.fill(RIVER_COLOR)
-                screen.blit(wave_surface, wave_rect)
+        # 移除绘制河流背景和波纹的代码
+        # pygame.draw.rect(screen, RIVER_COLOR, (0, separator_y, WIDTH, HEIGHT - separator_y))
 
-            # 更新每层波纹的偏移量
-            wave_offsets[layer] += wave_speed
-            if wave_offsets[layer] > WAVE_WIDTH:
-                wave_offsets[layer] = 0
+        # for layer in range(WAVE_LAYERS):
+        #     wave_offset = wave_offsets[layer]
+        #     wave_height = WAVE_HEIGHTS[layer]
+        #     wave_speed = WAVE_SPEEDS[layer]
+        #     for i in range(WAVE_COUNT):
+        #         wave_x = i * WAVE_WIDTH + wave_offset
+        #         wave_y = separator_y + (wave_height * math.sin((wave_x + wave_offset) * 0.03))
+        #         wave_rect = pygame.Rect(wave_x, wave_y, WAVE_WIDTH, wave_height)
+        #         alpha = int((math.sin((wave_x + wave_offset) * 0.03 + layer * 0.5) + 1) * 64)
+        #         wave_surface = pygame.Surface((WAVE_WIDTH, wave_height))
+        #         wave_surface.set_alpha(alpha)
+        #         wave_surface.fill(RIVER_COLOR)
+        #         screen.blit(wave_surface, wave_rect)
+        #
+        #     # 更新每层波纹的偏移量
+        #     wave_offsets[layer] += wave_speed
+        #     if wave_offsets[layer] > WAVE_WIDTH:
+        #         wave_offsets[layer] = 0
 
         # 绘制并更新矿石
         for ore in ores:
@@ -190,10 +204,12 @@ while running:
             game_paused = True
     else:
         screen.fill(WHITE)
-        # 先绘制背景元素
+        # 绘制分隔线
         pygame.draw.line(screen, BLACK, (0, separator_y), (WIDTH, separator_y), 5)
-        pygame.draw.rect(screen, RIVER_COLOR, (0, separator_y, WIDTH, HEIGHT - separator_y))
-        
+
+        # 绘制水的背景图片
+        screen.blit(water_image, (0, separator_y))
+
         # 最后绘制文字
         if font:
             text = font.render("恭喜你帮助漓江捡走了所有白色污染", True, BLACK)
