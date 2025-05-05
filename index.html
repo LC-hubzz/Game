@@ -24,12 +24,14 @@
         // 游戏常量
         const WIDTH = 800, HEIGHT = 600;
         const BOTTLE_COUNT = 5;
-        const RIVER_COLOR = '#0064ff';
-        
+        // 移除 RIVER_COLOR 常量
+
         // 加载资源
         const bottleImg = new Image();
         bottleImg.src = 'shui.png';  // 确保图片在项目目录中
-        
+        const waterImg = new Image();
+        waterImg.src = 'water.png';  // 加载水的图片
+
         // 钩子类
         class Hook {
             constructor() {
@@ -136,11 +138,20 @@
         let bottles = Array.from({length: BOTTLE_COUNT}, () => new Bottle());
         let gamePaused = false;
 
+        // 加载新资源
+        const ludiImg = new Image();
+        ludiImg.src = 'ludi.png';  // 加载陆地图片
+
         // 游戏循环
         function gameLoop() {
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
-            
+            // 清除整个画布
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        
+            // 绘制横线上方的陆地背景图片
+            if (ludiImg.complete) {
+                ctx.drawImage(ludiImg, 0,0, WIDTH, 100);
+            }
+        
             // 绘制分隔线
             ctx.beginPath();
             ctx.moveTo(0, 100);
@@ -148,10 +159,11 @@
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.stroke();
-            
-            // 绘制河流
-            ctx.fillStyle = RIVER_COLOR;
-            ctx.fillRect(0, 100, WIDTH, HEIGHT-100);
+        
+            // 绘制水的背景图片
+            if (waterImg.complete) {
+                ctx.drawImage(waterImg, 0, 100, WIDTH, HEIGHT - 100);
+            }
             
             // 更新状态
             if (!gamePaused) {
@@ -175,7 +187,7 @@
         }
 
         // 事件监听
-        // 修改事件监听
+        // 修改事件监听，同时支持电脑端空格键和手机端触摸屏幕
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && !gamePaused) {
                 e.preventDefault();
@@ -186,8 +198,24 @@
             }
         });
 
+        // 添加触摸屏幕事件监听
+        document.addEventListener('touchstart', (e) => {
+            if (!gamePaused) {
+                e.preventDefault();
+                if (!hook.isExtending && hook.length === 150) {
+                    hook.isExtending = true;
+                    hook.caughtBottle = null; // 重置抓取状态
+                }
+            }
+        }, { passive: false });
+
         // 启动游戏
-        bottleImg.onload = () => requestAnimationFrame(gameLoop);
+        // 修改为等待三张图片都加载完成
+        Promise.all([
+            new Promise(resolve => bottleImg.onload = resolve),
+            new Promise(resolve => waterImg.onload = resolve),
+            new Promise(resolve => ludiImg.onload = resolve)
+        ]).then(() => requestAnimationFrame(gameLoop));
     </script>
 </body>
 </html>
